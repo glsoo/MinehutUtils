@@ -2,6 +2,7 @@ package me.santio.minehututils.database.models
 
 import gg.ingot.iron.annotations.Model
 import gg.ingot.iron.strategies.NamingStrategy
+import me.santio.minehututils.coroutines.await
 import me.santio.minehututils.factories.EmbedFactory
 import me.santio.minehututils.resolvers.EmojiResolver
 import me.santio.minehututils.tags.SearchAlgorithm
@@ -90,7 +91,7 @@ data class Tag(
      * @param event The command to reply to
      * @param target The user to mention with the tag, if any
      */
-    fun send(event: SlashCommandInteractionEvent, target: User? = null) {
+    suspend fun send(event: SlashCommandInteractionEvent, target: User? = null) {
         val lines = body.lines().toMutableList()
         val buttons = mutableListOf<Button>()
 
@@ -135,7 +136,7 @@ data class Tag(
         if (target != null) reply.setContent(target.asMention)
 
         if (buttons.isNotEmpty()) reply.setComponents(ActionRow.of(buttons))
-        reply.queue(null) { logger.warn("Failed to send tag {} in {}: {}", id, event.channel.id, it.toString()) }
+        reply.await()
     }
 
     private companion object {

@@ -25,6 +25,7 @@ import net.dv8tion.jda.api.interactions.InteractionContextType
 import net.dv8tion.jda.api.interactions.commands.Command.Choice
 import net.dv8tion.jda.api.interactions.commands.DefaultMemberPermissions
 import net.dv8tion.jda.api.interactions.commands.build.CommandData
+import net.dv8tion.jda.api.interactions.commands.build.OptionData
 import java.util.*
 import kotlin.time.Duration.Companion.hours
 
@@ -80,13 +81,16 @@ class TagCommand : SlashCommand {
 
     override suspend fun autoComplete(event: CommandAutoCompleteInteractionEvent): List<Choice> {
         val guild = event.guild ?: return emptyList()
+        val query = event.focusedOption.value
 
         return when (event.focusedOption.name) {
             "id" -> {
-                return TagManager.getTags(guild.id)
-                    .map { Choice("[${it.id}] ${it.name}".take(100), "${it.id}") }
-                    .filter { it.name.contains(event.focusedOption.value, ignoreCase = true) }
-                    .take(25)
+                return TagManager.getTags(guild.id).asSequence()
+                    .map { "[${it.id}] ${it.name}" to "${it.id}" }
+                    .filter { (label) -> label.contains(query, ignoreCase = true) }
+                    .take(OptionData.MAX_CHOICES)
+                    .map { (label, id) -> Choice(label.take(OptionData.MAX_CHOICE_NAME_LENGTH), id) }
+                    .toList()
             }
             "type" -> {
                 return SearchAlgorithm.entries.map { it.name.lowercase() }.map { Choice(it, it) }
